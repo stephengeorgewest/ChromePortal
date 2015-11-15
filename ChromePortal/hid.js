@@ -1,3 +1,4 @@
+/*GLOBAL CONSTANTS*/
 var VENDOR_ID  = 0x1430; // 5168 in decimal Spyroporta
 var WII_PRODUCT_ID = 0x0150; // 336 in decimal 
 var XBOX_PRODUCT_ID = 0x1f17;
@@ -7,7 +8,8 @@ var DEVICE_INFO =
 var DEVICE_INFO2 = 
 	{"vendorId": VENDOR_ID, "productId": XBOX_PRODUCT_ID };
 
-var characterNames = {
+	//Change CHARACTER_NAMES to CHARACTRS. with names and attributes.
+var CHARACTER_NAMES = {
 	0: "Character_Whirlwind",
 	1: "Character_SonicBoom",
 	2: "Character_Warnado",
@@ -90,6 +92,9 @@ var characterNames = {
 	542: "SideKick_Ninjini",
 	543: "SideKick_EyeBrawl"
 };
+//HATS etc
+
+
 function SkylanderCharacter()
 {
 	this.serialNumber;
@@ -107,7 +112,7 @@ function SkylanderCharacter()
 	this.getName = function()
 	{
 		if(this.characterId != null)
-			return characterNames[this.characterId];
+			return CHARACTER_NAMES[this.characterId];
 	}
 	// array[0] == 'Q';
 	// ppn = array[0]-0x10;
@@ -158,6 +163,8 @@ function SkylanderCharacter()
 		return data;
 	}
 }
+
+// portal state stuff.
 var placed_characters = new Array();
 //placed_characters[0] = {"portal_spot":[1,1], "character": new SkylanderCharacter()};
 var portal_spots = new Array();  
@@ -171,7 +178,8 @@ var myText;
 
 document.addEventListener('DOMContentLoaded', function(){
 	document.getElementById("resetPortal").addEventListener("click", resetPortal);
-	document.getElementById("activatePortal").addEventListener('click',  activatePortal);
+	document.getElementById("activatePortalAntenna").addEventListener('click',  activatePortalAntenna);
+	document.getElementById("restartPolling").addEventListener('click',  myDevicePoll);
 	document.getElementById("color").addEventListener("change", changeColor);
 	myText = document.getElementById("mytext");
 });
@@ -232,6 +240,8 @@ var myDevicePoll = function() {
 											portal_spots[i].stability++
 										else if(portal_spots[i].character == null)
 										{
+											portal_spots[i].character = new SkylanderCharacter();
+											placed_characters[portal_spots[i].characterNumber].character = portal_spots[i].character;
 											// new charcter
 											readBlock(portal_spots[i].characterNumber, 0, null);
 											//read off block 1 for the character name.
@@ -245,7 +255,11 @@ var myDevicePoll = function() {
 								{
 									// character removed
 									var num = portal_spots[i]["characterNumber"];
-									placed_characters.splice(num,1);// do we want to leave the spot blank?
+									placed_characters.splice(num,1);
+									// do we want to leave the spot blank?
+									// yeah. we do...
+									
+									// renumber if necessary...
 									for(pc in placed_characters)
 									{
 										if(pc<num)
@@ -390,142 +404,160 @@ chrome.usb.onDeviceRemoved.addListener(function(device){usbhandle = null});
 function onOpenDevice(connectionHandle)
 {
 	console.log(connectionHandle);
-    usbhandle = connectionHandle;
-    resetPortal();
-	activatePortal();
-    changeColor();
+	usbhandle = connectionHandle;
+	resetPortal();
+	activatePortalAntenna();
+	changeColor();
 }
 
 /***************************************/
-/*** Portal Specific command formula ***/
+/***** Portal Specific Usb Command *****/
 /***************************************/
 // put these in var portal = function(){ this.sendRequest = function()}?
 // needs on usb device added/removed
 function sendRequest(data) {
-  var ti = {
-    "requestType": "class", /*bmRequestType 0x21*/
-    "recipient": "device", //interface",
-    "direction": "in",
-    "request": 0x09,//request, /*bRequest 0x09*/
-    "value": 0x0200,//val,/*wValue 0x0200*/
-    "index": 0,//idx,/*wIndex zero*/
-    "length": rw_buf_size,
-    "data": data.buffer
-  };
-  if(usbhandle)
-    chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
+	var ti = {
+		"requestType": "class", /*bmRequestType 0x21*/
+		"recipient": "device", //interface",
+		"direction": "in",
+		"request": 0x09,//request, /*bRequest 0x09*/
+		"value": 0x0200,//val,/*wValue 0x0200*/
+		"index": 0,//idx,/*wIndex zero*/
+		"length": rw_buf_size,
+		"data": data.buffer
+	};
+	if(usbhandle)
+		chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
 }
 
-function sendCommand(data) {
-  var ti = {
-    "requestType": "class", /*bmRequestType 0x21*/
-    "recipient": "device", //interface",
-    "direction": "out",
-    "request": 0x09,//request, /*bRequest 0x09*/
-    "value": 0x0200,//val,/*wValue 0x0200*/
-    "index": 0,//idx,/*wIndex zero*/
-    "length": rw_buf_size,
-    "data": data.buffer
-  };
-  if(usbhandle)
-  	chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
+function sendCommand(data)
+{
+	var ti = {
+		"requestType": "class", /*bmRequestType 0x21*/
+		"recipient": "device", //interface",
+		"direction": "out",
+		"request": 0x09,//request, /*bRequest 0x09*/
+		"value": 0x0200,//val,/*wValue 0x0200*/
+		"index": 0,//idx,/*wIndex zero*/
+		"length": rw_buf_size,
+		"data": data.buffer
+	};
+	if(usbhandle)
+	chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
 }
 
-function sendCompleted(usbEvent) {
-  if (chrome.runtime.lastError) {
-    console.error("sendCompleted Error:", chrome.runtime.lastError);
-  }
+function sendCompleted(usbEvent)
+{
+	if (chrome.runtime.lastError)
+	{
+		console.error("sendCompleted Error:", chrome.runtime.lastError);
+	}
 
-  if (usbEvent) {
-    if (usbEvent.data) {
-      var buf = new Uint8Array(usbEvent.data);
-      console.log("sendCompleted Buffer:", usbEvent.data.byteLength, buf);
-      if(buf[0] = 0x51/*'Q'*/)
-      {
-      	//add to pendingblockread list so we can retry if it doesn't come back'
-      }
-    }
-    if (usbEvent.resultCode !== 0) {
-      console.error("Error writing to device", usbEvent.resultCode);
-    }
-  }
+	if (usbEvent)
+	{
+		if (usbEvent.data)
+		{
+			var buf = new Uint8Array(usbEvent.data);
+			console.log("sendCompleted Buffer:", usbEvent.data.byteLength, buf);
+			if(buf[0] = 0x51/*'Q'*/)
+			{
+				//add to pendingblockread list so we can retry if we miss it in polling
+			}
+		}
+		if (usbEvent.resultCode !== 0) {
+			console.error("Error writing to device", usbEvent.resultCode);
+		}
+	  }
 }
 
 /***************************************/
-
+/********** All the API stuffs**********/
+/***************************************/
 function resetPortal()
 {
 	var data = new Uint8Array(rw_buf_size);
-
-	  data[0] = 0x52; //R
-	  data[1] = 0x00;
-	  data[2] = 0x00;
-	  data[3] = 0x00;
-	  sendCommand(data);
+		data[0] = 0x52; //R
+		data[1] = 0x00;
+		data[2] = 0x00;
+		data[3] = 0x00;
+	sendCommand(data);
 }
-
-function activatePortal()
+function activatePortalAntenna()
 {
 	var data = new Uint8Array(rw_buf_size);
-
-	  data[0] = 0x41; //A
-	  data[1] = 0x01;
-	  data[2] = 0x00;
-	  data[3] = 0x00;
-	  sendCommand(data);
+		data[0] = 0x41; //A
+		data[1] = 0x01;
+		data[2] = 0x00;
+		data[3] = 0x00;
+	sendCommand(data);
 }
-function deactivatePortal()
+function deactivatePortalAntenna()
 {
 	var data = new Uint8Array(rw_buf_size);
-
-	  data[0] = 0x41; //A
-	  data[1] = 0x00;
-	  data[2] = 0x00;
-	  data[3] = 0x00;
-	  sendCommand(data);
+		data[0] = 0x41; //A
+		data[1] = 0x00;
+		data[2] = 0x00;
+		data[3] = 0x00;
+	sendCommand(data);
 }
-function portalS()
+function getPortalStatus()
 {
 	var data = new Uint8Array(rw_buf_size);
-
-	  data[0] = 0x53; // S
-	  data[1] = 0x00;
-	  data[2] = 0x00;
-	  data[3] = 0x00;
-	  sendCommand(data);
+		data[0] = 0x53; // S
+		data[1] = 0x00;
+		data[2] = 0x00;
+		data[3] = 0x00;
+	sendCommand(data);
 }
-
-
-function changeColor()
+function changePortalColor(r, g, b)
 {
 	var data = new Uint8Array(rw_buf_size);
 	var color = document.getElementById("color").value;
-	  data[0] = 0x43; // C
-	  data[1] = parseInt("0x"+color.substr(0,2)); //R
-	  data[2] = parseInt("0x"+color.substr(2,2)); //G
-	  data[3] = parseInt("0x"+color.substr(4,2)); //B
+		data[0] = 0x43; // C
+		data[1] = r; //R
+		data[2] = g; //G
+		data[3] = b; //B
 	sendCommand(data);
 }
-
-function readBlock(/*number*/skylanderNumber, /*unsigned int*/ blockNumber, /*unsigned char*/ character_data/*[0x10]*/ )
+function readBlock(/*number*/skylanderNumber, /*unsigned int*/ blockNumber/*, /*unsigned char* character_data/*[0x10]*/ )
 {
 	if(blockNumber > 40)// nothing past 40?
 		return;
 	var data = new Uint8Array(rw_buf_size);
-	  data[0] = 0x51;//0d81 Q for read obviously
-	  data[1] = 0x10+skylanderNumber;
-	  if(blockNumber == 0)
-	  	data[1] +=0x10;
-	  data[2] = blockNumber;
+		data[0] = 0x51;//0d81 Q for read obviously
+		data[1] = 0x10+skylanderNumber;
+		if(blockNumber == 0)
+			data[1] +=0x10;
+		data[2] = blockNumber;
 	sendCommand(data);
 }
-
-function writeBlock( block, data, skylanderNumber)
+function writeBlock(skylanderNumber, blockNumber, blockData)
 {
-	// W for wingcommander
+	if(blockNumber > 40)// nothing past 40?
+		return;
+	var data = new Uint8Array(rw_buf_size);
+		data[0] = 0x57;// W for wingcommander
+		data[1] = 0x10+skylanderNumber;
+		if(blockNumber == 0)
+			data[1] +=0x10;
+		data[2] = blockNumber;
+	//sendCommand(data);
 }
 
 
+/*set the color via the color.js widget*/
+function changeColor()
+{
+	var color = document.getElementById("color").value;
+	var r = parseInt("0x"+color.substr(0,2)); //R
+	var g = parseInt("0x"+color.substr(2,2)); //G
+	var b = parseInt("0x"+color.substr(4,2)); //B
+	changePortalColor(r, g, b);
+}
+
+
+
+/* start it all.*/
 
 initializeHid(myDevicePoll);
 setup_usb();
