@@ -188,8 +188,8 @@ function arrayBufferToString(array) {
 /***************************************/
 /************ USB hid setup ************/
 /***************************************/
+var messageCount;
 var myDevicePoll = function() {
-
 	if(connectionId != null)
 	{
 		chrome.hid.receive(connectionId, function(reportID, data) {
@@ -219,12 +219,26 @@ var myDevicePoll = function() {
 							for(var i=0; i<4*8; i++)
 							{
 								var spot_taken = array[Math.floor(i/8)+1]&1<<(i%8);
-								if(spot_taken && portal_spots[i] == null)
-								{ // new charcter
-									//read off block 1 for the character name.
-									readBlock(placed_characters.length, 1, null);
-									portal_spots[i] = {"characterNumber": placed_characters.length, "character": null};
-									placed_characters[placed_characters.length] = {"portal_spot": i, "character": null};
+								if(spot_taken)
+								{ 
+									if(portal_spots[i] == null)
+									{
+										portal_spots[i] = {"characterNumber": placed_characters.length, "character": null, "stability": 0};
+										placed_characters[placed_characters.length] = {"portal_spot": i, "character": null};
+									}
+									else
+									{
+										if(portal_spots[i].stability < 50)
+											portal_spots[i].stability++
+										else if(portal_spots[i].character == null)
+										{
+											// new charcter
+											readBlock(portal_spots[i].characterNumber, 0, null);
+											//read off block 1 for the character name.
+											readBlock(portal_spots[i].characterNumber, 1, null);
+										}
+
+									}
 
 								}
 								if(!spot_taken && portal_spots[i] != null)
@@ -242,12 +256,20 @@ var myDevicePoll = function() {
 									portal_spots[i] = null;
 								}
 							}
+							var recievedMessageCount = array[5];
+							//if(recievedMessageCount - (messageCount+1)%256 && messageCount != null)
+							//	console.log("missed messages: " +(messageCount - recievedMessageCount +1));
+
+							messageCount = recievedMessageCount;
 							break;
 						case 'Q': // got a block read
 						// create a pending reads to see if we missed some
 						// remove the read from the pending reads 
-							if(array[1] == 1)
-								break; // errorfire off another read?
+							if(array[1] < 0x10)
+							{
+								console.log("invalid characterNumber");
+								break; 
+							}
 								 
 							var characterNumber = array[1] - 0x10;
 							var blockNumber = array[2];
@@ -281,14 +303,10 @@ var myDevicePoll = function() {
 					if(String.fromCharCode(array[0]) != 'S' && String.fromCharCode(array[0]) != 'Z')
 					{
 						console.log(string);
-						if(array[0] = 0x51)//Q
-						{
-							
-						}
 					}
 				}
 			}
-			setTimeout(myDevicePoll, 100);
+			setTimeout(myDevicePoll, 1);
 		});
 	}
 }
@@ -394,7 +412,8 @@ function sendRequest(data) {
     "length": rw_buf_size,
     "data": data.buffer
   };
-  chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
+  if(usbhandle)
+    chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
 }
 
 function sendCommand(data) {
@@ -408,7 +427,8 @@ function sendCommand(data) {
     "length": rw_buf_size,
     "data": data.buffer
   };
-  chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
+  if(usbhandle)
+  	chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
 }
 
 function sendCompleted(usbEvent) {
