@@ -169,6 +169,10 @@ var placed_characters = new Array();
 //placed_characters[0] = {"portal_spot":[1,1], "character": new SkylanderCharacter()};
 var portal_spots = new Array();  
 //portal_spots[5] = {"characterNumber": 0, "character": {"name": ""}};
+var pending_read = new Array();//? or just use SkylanderCharacter.blocks
+// {"characterNumber: 2, "blockNumbers":[2,3,4]}
+var currently_reading;
+//{"characterNumber":2, "blockNumber":1, "age":4}
 
 var connectionId = null;
 var usbhandle;
@@ -207,7 +211,8 @@ var myDevicePoll = function() {
 			}
 			else
 			{
-				if (data != null) {
+				if (data != null)
+				{
 					// Convert Byte into Ascii to follow the format of our device
 					array = new Uint8Array(data);
 					string = reportID + "-" + array.length + ":" + String.fromCharCode(array[0]);
@@ -222,6 +227,16 @@ var myDevicePoll = function() {
 					{
 						case 'Z':
 							// sleeping
+							// clear out placed_characters, and rread upon wake?
+							// Probably, they could have all changed.
+							/*if(portal_spots.length>0 || placed_characters.length>0)
+							{
+								placed_characters.splice(0,placed_characters.length);
+								portal_spots.splice(0, portal_spots.length);
+							}*/
+							
+							//nevermind. they simply won't match portal_spots
+							// and that will remove thim.
 							break;
 						case 'S': 
 							for(var i=0; i<4*8; i++)
@@ -239,13 +254,14 @@ var myDevicePoll = function() {
 										if(portal_spots[i].stability < 50)
 											portal_spots[i].stability++
 										else if(portal_spots[i].character == null)
-										{
+										{// can we get here but alread have a character populated?
 											portal_spots[i].character = new SkylanderCharacter();
 											placed_characters[portal_spots[i].characterNumber].character = portal_spots[i].character;
 											// new charcter
-											readBlock(portal_spots[i].characterNumber, 0, null);
-											//read off block 1 for the character name.
-											readBlock(portal_spots[i].characterNumber, 1, null);
+											pending_read[pending_read.length] = {
+												"characterNumber":portal_spots[i].characterNumber,
+												"blockNumbers":[0,1] 
+											};
 										}
 
 									}
@@ -255,6 +271,13 @@ var myDevicePoll = function() {
 								{
 									// character removed
 									var num = portal_spots[i]["characterNumber"];
+									if(currently_reading != null && currently_reading.characterNumber == num)
+										currently_reading = null;
+									for(p in pending_read)
+									{
+										if(pending_read[p].characterNumber == num)
+											pending_read.splice(p,1);
+									}
 									placed_characters.splice(num,1);
 									// do we want to leave the spot blank?
 									// yeah. we do...
@@ -289,6 +312,10 @@ var myDevicePoll = function() {
 							var blockNumber = array[2];
 							//var name = characters[array[3] + array[4]*16];
 
+							if(currently_reading != null)
+								if(currently_reading.characterNumber == characterNumber && currently_reading.blockNumber == blockNumber)
+									currently_reading = null;
+									
 							var character = null;
 							if(placed_characters[characterNumber] != null)
 								character = placed_characters[characterNumber].character;
@@ -307,18 +334,42 @@ var myDevicePoll = function() {
 							break;
 
 					}
+					if(currently_reading != null && message_type != 'Z')
+					{
+						currently_reading.age ++;
+						if(currently_reading.age > 50)
+						{
+							readBlock(currently_reading.characterNumber, currently_reading.blockNumber);
+							currently_reading.age = 0;
+						}
+					}
+					else if(pending_read.length > 0)
+					{
+						currently_reading = {
+							"characterNumber":pending_read[0].characterNumber,
+							"blockNumber": pending_read[0].blockNumbers[0],
+							"age":0
+						};
+						readBlock(pending_read[0].characterNumber, pending_read[0].blockNumbers[0]);
+						pending_read[0].blockNumbers.splice(0,1);
+						if(pending_read[0].blockNumbers.length==0)
+							pending_read.splice(0,1);
+						//read off block 1 for the character name.
+						//readBlock(portal_spots[i].characterNumber, 1, null);
+					}
+
 					var characters_on_portal = "";
 					for(var i = 0; i < placed_characters.length; i++)
 						if(placed_characters[i] != null)
 							if(placed_characters[i].character != null)
-								characters_on_portal += placed_characters[i].character.name + ", ";
+								characters_on_portal += placed_characters[i].character.name+"(" + placed_characters[i].character.serialNumber + "), ";
 					document.getElementById("textbox").innerText = characters_on_portal;
 
 					if(String.fromCharCode(array[0]) != 'S' && String.fromCharCode(array[0]) != 'Z')
 					{
 						console.log(string);
 					}
-				}
+				}	
 			}
 			setTimeout(myDevicePoll, 1);
 		});
@@ -543,7 +594,13 @@ function writeBlock(skylanderNumber, blockNumber, blockData)
 		data[2] = blockNumber;
 	//sendCommand(data);
 }
-
+//todos
+/*
+figure out what kind
+read battery status
+read antenna status
+read color
+*/
 
 /*set the color via the color.js widget*/
 function changeColor()
