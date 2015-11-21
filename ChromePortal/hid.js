@@ -369,6 +369,7 @@ var myDevicePoll = function() {
 						// remove the read from the pending reads 
 							if(array[1] < 0x10)
 							{
+								console.log("invalid placedCharacter");
 								break; 
 							}
 								 
