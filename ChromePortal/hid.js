@@ -170,6 +170,7 @@ function SkylanderCharacter()
 				this.name = this.getName();
 				for(var i=0; i<8; i++)
 					this.tradingCardId[i] = data[4+i];
+				//0x0c = character iteration
 					//0(bomb/blast,freeze/blade,wash/buckrer),
 					//2(magna/charge),
 					//5(elf3) ,0=elf, 1=legendary?, 2=elf2?, 3=dark?, 4=elf3? 
