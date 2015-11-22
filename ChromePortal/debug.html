@@ -2,13 +2,14 @@
 <html>
   <head>
     <title>Debug!</title>
-  </head>
-  <body>
-  	<script src="toy.js"></script>
-    <script src="portal.js"></script>
+    <script src="toy.js"></script>
+    <!--<script src="portal.js"></script>-->
     <script src="debug.js"></script>
 	<script src="jscolor.js"></script>
 	
+  </head>
+  <body>
+    
 	<input type="text" id="mytext" />
 	<button id="resetPortal">ResetPortal</button>
 	<button id="activatePortalAntenna">ActivatePortalAntenna</button>
@@ -16,5 +17,9 @@
 Color: <input class="jscolor {onFineChange:'changeColor()'}" id = "color" value="ab2567">
 	<br />
 	<textbox id="textbox">a</textbox>
+	<section class="detail-section info">
+		<div id="icon" class="character-info air"><div class="element-icon"></div></div>
+	</section>
+	<textbox id="statusChange"></textbox>
   </body>
 </html>

@@ -44,7 +44,9 @@ var myDevicePoll = function() {
 		chrome.hid.receive(connectionId, function(reportID, data) {
 			if(chrome.runtime.lastError != null && myText != null)
 			{
-				myText.value = chrome.runtime.lastError.message;
+				portalPorts[0].postMessage(
+					{command: "status_change", data: chrome.runtime.lastError.message}
+				);
 			}
 			else
 			{
@@ -57,8 +59,9 @@ var myDevicePoll = function() {
 					{
 						raw_string = raw_string + ":" + array[i].toString(16);
 					}
-					if(myText != null)
-						myText.value = raw_string;
+					portalPorts[0].postMessage(
+						{command: "hid_data", data: raw_string}
+					);
 					var message_type = String.fromCharCode(array[0]);
 					switch(message_type)
 					{
@@ -216,8 +219,9 @@ var myDevicePoll = function() {
 						if(placed_characters[i] != null)
 							if(placed_characters[i].Character != null)
 								characters_on_portal += "#" + placed_characters[i].Character.characterId + " - " +placed_characters[i].Character.name+"(" + placed_characters[i].Character.serialNumber + "), ";
-					document.getElementById("textbox").innerText = characters_on_portal;
-
+					portalPorts[0].postMessage(
+						{command: "placed_characters_string", data: characters_on_portal}
+					);
 					if(String.fromCharCode(array[0]) != 'S' && String.fromCharCode(array[0]) != 'Z')
 					{
 						console.log(raw_string);
@@ -234,21 +238,24 @@ function initializeHid(pollHid) {
 	chrome.hid.getDevices(DEVICE_INFO, function(devices) {
 		if (!devices || !devices.length) {
 			console.log('device not found');
-			myText.value = "device not found";
+			portalPorts[0].postMessage(
+				{command: "status_change", data: "HID Device not found."}
+			);
 			return;
 		}
 		console.log('Found device: ' + devices[0].deviceId);
-		if(myText != null)
-			myText.value = 'Found device: ' + devices[0].deviceId;
+		portalPorts[0].postMessage(
+			{command: "status_change", data: "HID Device not found."}
+		);
 		myHidDevice = devices[0].deviceId;
 		
-		/*document.getElementById("textbox").innerText = devices;*/
 		console.log(devices);
 		// Connect to the HID device
 		chrome.hid.connect(myHidDevice, function(connection) {
 			console.log('Connected to the HID device!');
-			if(myText != null)
-				myText.value = 'Device Connected : ' + connection.connectionId;
+			portalPorts[0].postMessage(
+				{command: "status_change", data: "HID Device Connected: " + connection.connectionId}
+			);
 			connectionId = connection.connectionId;
 		
 			// Poll the USB HID Interrupt pipe
@@ -260,13 +267,15 @@ chrome.hid.onDeviceAdded.addListener( function (device)
 {
 	if (!device) {
 		console.log('device not found');
-		if(myText != null)
-			myText.value = "device not found";
+		portalPorts[0].postMessage(
+			{command: "status_change", data: "HID Device not found."}
+		);
 		return;
 	}
 	console.log('Found device: ' + device.deviceId);
-	if(myText != null)
-		myText.value = 'Found device: ' + device.deviceId;
+	portalPorts[0].postMessage(
+		{command: "status_change", data: "HID Found device: " + device.deviceId}
+	);
 	myHidDevice = device.deviceId;
 	
 	/*document.getElementById("textbox").innerText = devices;*/
@@ -275,7 +284,9 @@ chrome.hid.onDeviceAdded.addListener( function (device)
 	// Connect to the HID device
 	chrome.hid.connect(myHidDevice, function(connection) {
 		console.log('Connected to the HID device!');
-		myText.value = 'Device Connected : ' + connection.connectionId;
+		portalPorts[0].postMessage(
+			{command: "status_change", data: "HID Device connected: " + connection.connectionId}
+		);
 		connectionId = connection.connectionId;
 		setup_usb();
 		// Poll the USB HID Interrupt pipe
@@ -311,7 +322,7 @@ function onOpenDevice(connectionHandle)
 	usbhandle = connectionHandle;
 	resetPortal();
 	activatePortalAntenna();
-	changeColor();
+	changePortalColor(255,255,255);
 }
 
 /***************************************/
@@ -416,7 +427,6 @@ function getPortalStatus()
 function changePortalColor(r, g, b)
 {
 	var data = new Uint8Array(rw_buf_size);
-	var color = document.getElementById("color").value;
 		data[0] = 0x43; // C
 		data[1] = r; //R
 		data[2] = g; //G
@@ -455,19 +465,7 @@ read antenna status
 read color
 */
 
-/*set the color via the color.js widget*/
-function changeColor()
-{
-	var color = document.getElementById("color").value;
-	var r = parseInt("0x"+color.substr(0,2)); //R
-	var g = parseInt("0x"+color.substr(2,2)); //G
-	var b = parseInt("0x"+color.substr(4,2)); //B
-	changePortalColor(r, g, b);
-}
-
 
 
 /* start it all.*/
-
-initializeHid(myDevicePoll);
-setup_usb();
+// done in background.js
