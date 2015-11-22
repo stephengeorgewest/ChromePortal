@@ -11,13 +11,13 @@ var DEVICE_INFO2 =
 
 // portal state stuff.
 var placed_characters = new Array();
-//placed_characters[0] = {"portal_spot":1, "Character": new SkylanderCharacter()};
+//placed_characters[0] = {"portal_spot": 1, "Character": new SkylanderCharacter()};
 var portal_spots = new Array();  
-//portal_spots[5] = {"placed_character": 0, "Active": true, "Stability":0...50?};
+//portal_spots[5] = {"placed_character": 0, "Active": true, "Stability": 0...50?};
 var pending_read = new Array();//? or just use SkylanderCharacter.blocks
-// {"placed_character": 2, "BlockNumbers":[2,3,4]}
+// {"placed_character": 2, "BlockNumbers": [2,3,4]}
 var currently_reading;
-//{"placed_character":2, "BlockNumber":1, "Age":4, "Retries":4}
+//{"placed_character": 2, "BlockNumber": 1, "Age": 4, "Retries": 4}
 
 var connectionId = null;
 var usbhandle;
@@ -218,7 +218,7 @@ var myDevicePoll = function() {
 					for(var i = 0; i < placed_characters.length; i++)
 						if(placed_characters[i] != null)
 							if(placed_characters[i].Character != null)
-								characters_on_portal += "#" + placed_characters[i].Character.characterId + " - " +placed_characters[i].Character.name+"(" + placed_characters[i].Character.serialNumber + "), ";
+								characters_on_portal += "#" + placed_characters[i].Character.characterId + " - " + placed_characters[i].Character.name + "(" + placed_characters[i].Character.serialNumber + "), ";
 					portalPorts[0].postMessage(
 						{command: "placed_characters_string", data: characters_on_portal}
 					);
@@ -226,7 +226,7 @@ var myDevicePoll = function() {
 					{
 						console.log(raw_string);
 					}
-				}	
+				}
 			}
 			setTimeout(myDevicePoll, 1);
 		});
@@ -257,7 +257,7 @@ function initializeHid(pollHid) {
 				{command: "status_change", data: "HID Device Connected: " + connection.connectionId}
 			);
 			connectionId = connection.connectionId;
-		
+			
 			// Poll the USB HID Interrupt pipe
 			pollHid();
 		});
@@ -303,10 +303,10 @@ chrome.hid.onDeviceRemoved.addListener(function (device){connectionId = null;});
 /***************************************/
 function setup_usb()
 {
-    chrome.usb.getDevices(DEVICE_INFO, function(devices){
+	chrome.usb.getDevices(DEVICE_INFO, function(devices){
 		console.log(devices);
 		if(devices != null && devices.length > 0)
-			chrome.usb.openDevice(devices[0],onOpenDevice);
+			chrome.usb.openDevice(devices[0], onOpenDevice);
 	});
 }
 //doesn't get fired until we run openDevice?'
@@ -358,7 +358,7 @@ function sendCommand(data)
 		"data": data.buffer
 	};
 	if(usbhandle)
-	chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
+		chrome.usb.controlTransfer(usbhandle, ti, sendCompleted);
 }
 
 function sendCompleted(usbEvent)
@@ -382,7 +382,7 @@ function sendCompleted(usbEvent)
 		if (usbEvent.resultCode !== 0) {
 			console.error("Error writing to device", usbEvent.resultCode);
 		}
-	  }
+	}
 }
 
 /***************************************/
@@ -397,23 +397,30 @@ function resetPortal()
 		data[3] = 0x00;
 	sendCommand(data);
 }
+function setPortalAntenna(upDown)
+{
+	if(typeof upDown === "number")
+	{
+		if(upDown == 0 || upDown == 1)
+		var data = new Uint8Array(rw_buf_size);
+			data[0] = 0x41; //A
+			data[1] = upDown;
+			data[2] = 0x00;
+			data[3] = 0x00;
+		sendCommand(data);
+	}
+	else
+	{
+		console.log("setPortalAntenna upDown is not numeric");
+	}
+}
 function activatePortalAntenna()
 {
-	var data = new Uint8Array(rw_buf_size);
-		data[0] = 0x41; //A
-		data[1] = 0x01;
-		data[2] = 0x00;
-		data[3] = 0x00;
-	sendCommand(data);
+	setPortalAntenna(1);
 }
 function deactivatePortalAntenna()
 {
-	var data = new Uint8Array(rw_buf_size);
-		data[0] = 0x41; //A
-		data[1] = 0x00;
-		data[2] = 0x00;
-		data[3] = 0x00;
-	sendCommand(data);
+	setPortalAntenna(0);
 }
 function getPortalStatus()
 {

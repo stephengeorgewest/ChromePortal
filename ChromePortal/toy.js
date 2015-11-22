@@ -1,6 +1,10 @@
 
+var DOMAIN = "https://www.skylanders.com/";
+var SITE_BASE_PATH = "characters/";
+var SOUND_BASE_PATH = "content/dam/atvi/skylanders/base/characters/audio/";
 var TOY_INFO = {
 	0: {"Type": "Character", "Name": "Whirlwind"},
+	// "Element": "Air", "webname": "whirlwind", "Youtube": "FM_xV6ZFpz0", "SoundBite": "vo_whirlwind_catchphrase_01.ogg"},
 	1: {"Type": "Character", "Name": "SonicBoom"},
 	2: {"Type": "Character", "Name": "Warnado"},
 	3: {"Type": "Character", "Name": "LightningRod"},

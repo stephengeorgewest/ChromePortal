@@ -20,6 +20,18 @@ function messageListener(msg)
 		initializeHid(myDevicePoll);
 		setup_usb();
 	}
+	if(msg.command == "antenna")
+	{
+		setPortalAntenna(msg.data);
+	}
+	if(msg.command == "resetPortal")
+	{
+		resetPortal();
+	}
+	if(msg.command == "restartPolling")
+	{
+		myDevicePoll();
+	}
 }
 function usbListener(port)
 {
