@@ -44,7 +44,7 @@ var myDevicePoll = function() {
 		chrome.hid.receive(connectionId, function(reportID, data) {
 			if(chrome.runtime.lastError != null && myText != null)
 			{
-				portalPorts[0].postMessage(
+				portalPorts["debug.html"].postMessage(
 					{command: "status_change", data: chrome.runtime.lastError.message}
 				);
 			}
@@ -59,7 +59,7 @@ var myDevicePoll = function() {
 					{
 						raw_string = raw_string + ":" + array[i].toString(16);
 					}
-					portalPorts[0].postMessage(
+					portalPorts["debug.html"].postMessage(
 						{command: "hid_data", data: raw_string}
 					);
 					var message_type = String.fromCharCode(array[0]);
@@ -219,7 +219,7 @@ var myDevicePoll = function() {
 						if(placed_characters[i] != null)
 							if(placed_characters[i].Character != null)
 								characters_on_portal += "#" + placed_characters[i].Character.characterId + " - " + placed_characters[i].Character.name + "(" + placed_characters[i].Character.serialNumber + "), ";
-					portalPorts[0].postMessage(
+					portalPorts["debug.html"].postMessage(
 						{command: "placed_characters_string", data: characters_on_portal}
 					);
 					if(String.fromCharCode(array[0]) != 'S' && String.fromCharCode(array[0]) != 'Z')
@@ -238,13 +238,13 @@ function initializeHid(pollHid) {
 	chrome.hid.getDevices(DEVICE_INFO, function(devices) {
 		if (!devices || !devices.length) {
 			console.log('device not found');
-			portalPorts[0].postMessage(
+			portalPorts["debug.html"].postMessage(
 				{command: "status_change", data: "HID Device not found."}
 			);
 			return;
 		}
 		console.log('Found device: ' + devices[0].deviceId);
-		portalPorts[0].postMessage(
+		portalPorts["debug.html"].postMessage(
 			{command: "status_change", data: "HID Device not found."}
 		);
 		myHidDevice = devices[0].deviceId;
@@ -253,7 +253,7 @@ function initializeHid(pollHid) {
 		// Connect to the HID device
 		chrome.hid.connect(myHidDevice, function(connection) {
 			console.log('Connected to the HID device!');
-			portalPorts[0].postMessage(
+			portalPorts["debug.html"].postMessage(
 				{command: "status_change", data: "HID Device Connected: " + connection.connectionId}
 			);
 			connectionId = connection.connectionId;
@@ -267,13 +267,13 @@ chrome.hid.onDeviceAdded.addListener( function (device)
 {
 	if (!device) {
 		console.log('device not found');
-		portalPorts[0].postMessage(
+		portalPorts["debug.html"].postMessage(
 			{command: "status_change", data: "HID Device not found."}
 		);
 		return;
 	}
 	console.log('Found device: ' + device.deviceId);
-	portalPorts[0].postMessage(
+	portalPorts["debug.html"].postMessage(
 		{command: "status_change", data: "HID Found device: " + device.deviceId}
 	);
 	myHidDevice = device.deviceId;
@@ -284,7 +284,7 @@ chrome.hid.onDeviceAdded.addListener( function (device)
 	// Connect to the HID device
 	chrome.hid.connect(myHidDevice, function(connection) {
 		console.log('Connected to the HID device!');
-		portalPorts[0].postMessage(
+		portalPorts["debug.html"].postMessage(
 			{command: "status_change", data: "HID Device connected: " + connection.connectionId}
 		);
 		connectionId = connection.connectionId;

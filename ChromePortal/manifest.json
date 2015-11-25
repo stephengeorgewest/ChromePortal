@@ -10,7 +10,7 @@
     }
   },
   "icons": {"128": "skylanders_tech_icon_by_omniferious-d4j6186.png" },
-  "permissions": ["usb", "hid", {
+  "permissions": ["fullscreen", "webview", "http://www.youtube.com/*", "https://www.youtube.com/*", "usb", "hid", {
       "usbDevices":
           [ { "vendorId": 5168, "productId":7959}, { "vendorId": 5168, "productId":336}  ]
       }

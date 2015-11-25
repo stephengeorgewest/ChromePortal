@@ -2,11 +2,15 @@
 document.addEventListener('DOMContentLoaded', function(){
 	document.getElementById("resetPortal").addEventListener("click", resetPortal);
 	document.getElementById("activatePortalAntenna").addEventListener('click',  activatePortalAntenna);
-	//document.getElementById("restartPolling").addEventListener('click',  myDevicePoll);
+	document.getElementById("restartPolling").addEventListener('click',  restartPolling);
 	document.getElementById("color").addEventListener("change", changeColor);
-	myText = document.getElementById("mytext");
+	document.getElementById("startVideo").addEventListener("click", startVideo);
 });
 
+function startVideo()
+{
+	portalPort.postMessage({command: "startVideo"});
+}
 /*set the color via the color.js widget*/
 function changeColor()
 {
@@ -39,7 +43,7 @@ function readPortalMessage(msg)
 	}
 	if(msg.command == "hid_data")
 	{
-		myText.value = msg.data;
+		document.getElementById("mytext").value = msg.data;
 	}
 	if(msg.command == "status_change")
 	{
