@@ -6,6 +6,17 @@ chrome.app.runtime.onLaunched.addListener(function() {
     }
   });
 });
+var placedCharcterCallback = function(c, d, n)
+{
+	console.log(c, d, n);
+}
+var debugMessageCallback = function(c, d)
+{
+	portalPorts["debug.html"].postMessage(
+		{command: c, data: d}
+	);
+}
+
 var videoWindow = "closed";
 function launchVideo(video)
 {

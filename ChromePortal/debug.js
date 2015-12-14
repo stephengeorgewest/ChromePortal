@@ -52,6 +52,13 @@ function readPortalMessage(msg)
  			"<br />" +
  			msg.data;
  	}
+ 	if(msg.command == "status_error")
+	{
+		document.getElementById("statusChange").innerHTML =
+			document.getElementById("statusChange").innerHTML +
+ 			"<br /><span class='error'" +
+ 			msg.data + "</span>";
+ 	}
 }
 var portalPort = chrome.runtime.connect({name: "portal"});
 portalPort.onMessage.addListener(readPortalMessage);

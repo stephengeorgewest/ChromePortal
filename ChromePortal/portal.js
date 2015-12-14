@@ -24,7 +24,15 @@ var usbhandle;
 var rw_buf_size = 0x21;
 var myText;
 
-
+// these should be overridden in background.js
+var placedCharcterCallback = function(c, d, n)
+{
+	console.log(c, d, n);
+}
+var debugMessageCallback = function(c, d)
+{
+	console.log(c, d);
+}
 
 
 
@@ -44,9 +52,7 @@ var myDevicePoll = function() {
 		chrome.hid.receive(connectionId, function(reportID, data) {
 			if(chrome.runtime.lastError != null && myText != null)
 			{
-				portalPorts["debug.html"].postMessage(
-					{command: "status_change", data: chrome.runtime.lastError.message}
-				);
+				debugMessageCallback("status_change",chrome.runtime.lastError.message);
 			}
 			else
 			{
@@ -59,9 +65,7 @@ var myDevicePoll = function() {
 					{
 						raw_string = raw_string + ":" + array[i].toString(16);
 					}
-					portalPorts["debug.html"].postMessage(
-						{command: "hid_data", data: raw_string}
-					);
+					debugMessageCallback("hid_data", raw_string);
 					var message_type = String.fromCharCode(array[0]);
 					switch(message_type)
 					{
@@ -138,6 +142,7 @@ var myDevicePoll = function() {
 										portal_spots[placed_characters[pc].portal_spot].placed_character = pc;
 									}*/
 									portal_spots[i].Active = false;
+									placedCharcterCallback("removed", portal_spots)
 								}
 							}
 							var recievedMessageCount = array[5];
@@ -151,7 +156,7 @@ var myDevicePoll = function() {
 						// remove the read from the pending reads 
 							if(array[1] < 0x10)
 							{
-								console.log("invalid placedCharacter");
+								debugMessageCallback("status_change", "invalid placedCharacter");
 								break; 
 							}
 								 
@@ -177,7 +182,10 @@ var myDevicePoll = function() {
 							//var _portalSpot = placed_characters[placedCharacter]["portal_spot"];
 							//portal_spots[_portalSpot].Character = character;
 							//character type
-	   					  		 console.log(character.name);
+	   					  	debugMessageCallback("status_change", character.name);
+	   					  	// should really loop over array 
+	   					  	if(pending_read.length == 0 && currently_reading == null)
+	   					  		placedCharcterCallback("new_character", placed_characters, placedCharacter)
 							break;
 
 					}// end read message
@@ -219,12 +227,10 @@ var myDevicePoll = function() {
 						if(placed_characters[i] != null)
 							if(placed_characters[i].Character != null)
 								characters_on_portal += "#" + placed_characters[i].Character.characterId + " - " + placed_characters[i].Character.name + "(" + placed_characters[i].Character.serialNumber + "), ";
-					portalPorts["debug.html"].postMessage(
-						{command: "placed_characters_string", data: characters_on_portal}
-					);
+					debugMessageCallback("placed_characters_string", characters_on_portal);
 					if(String.fromCharCode(array[0]) != 'S' && String.fromCharCode(array[0]) != 'Z')
 					{
-						console.log(raw_string);
+						debugMessageCallback("status_change", raw_string);
 					}
 				}
 			}
@@ -237,25 +243,16 @@ function initializeHid(pollHid) {
 	// Try to open the USB HID device
 	chrome.hid.getDevices(DEVICE_INFO, function(devices) {
 		if (!devices || !devices.length) {
-			console.log('device not found');
-			portalPorts["debug.html"].postMessage(
-				{command: "status_change", data: "HID Device not found."}
-			);
+			debugMessageCallback("status_change", "HID Device not found.");
 			return;
 		}
-		console.log('Found device: ' + devices[0].deviceId);
-		portalPorts["debug.html"].postMessage(
-			{command: "status_change", data: "HID Device not found."}
-		);
+		debugMessageCallback("status_change", 'Found device: ' + devices[0].deviceId);
 		myHidDevice = devices[0].deviceId;
 		
 		console.log(devices);
 		// Connect to the HID device
 		chrome.hid.connect(myHidDevice, function(connection) {
-			console.log('Connected to the HID device!');
-			portalPorts["debug.html"].postMessage(
-				{command: "status_change", data: "HID Device Connected: " + connection.connectionId}
-			);
+			debugMessageCallback("status_change", "HID Device Connected: " + connection.connectionId);
 			connectionId = connection.connectionId;
 			
 			// Poll the USB HID Interrupt pipe
@@ -266,16 +263,10 @@ function initializeHid(pollHid) {
 chrome.hid.onDeviceAdded.addListener( function (device)
 {
 	if (!device) {
-		console.log('device not found');
-		portalPorts["debug.html"].postMessage(
-			{command: "status_change", data: "HID Device not found."}
-		);
+		debugMessageCallback("status_change", "HID Device not found.");
 		return;
 	}
-	console.log('Found device: ' + device.deviceId);
-	portalPorts["debug.html"].postMessage(
-		{command: "status_change", data: "HID Found device: " + device.deviceId}
-	);
+	debugMessageCallback("status_change", "HID Found device: " + device.deviceId);
 	myHidDevice = device.deviceId;
 	
 	/*document.getElementById("textbox").innerText = devices;*/
@@ -283,10 +274,7 @@ chrome.hid.onDeviceAdded.addListener( function (device)
 	console.log(device);
 	// Connect to the HID device
 	chrome.hid.connect(myHidDevice, function(connection) {
-		console.log('Connected to the HID device!');
-		portalPorts["debug.html"].postMessage(
-			{command: "status_change", data: "HID Device connected: " + connection.connectionId}
-		);
+		debugMessageCallback("status_change", "HID Device connected: " + connection.connectionId);
 		connectionId = connection.connectionId;
 		setup_usb();
 		// Poll the USB HID Interrupt pipe
@@ -305,6 +293,7 @@ function setup_usb()
 {
 	chrome.usb.getDevices(DEVICE_INFO, function(devices){
 		console.log(devices);
+		debugMessageCallback("status_change", "setup_usb: " + devices.length + " matching devices");
 		if(devices != null && devices.length > 0)
 			chrome.usb.openDevice(devices[0], onOpenDevice);
 	});
@@ -318,7 +307,7 @@ function setup_usb()
 chrome.usb.onDeviceRemoved.addListener(function(device){usbhandle = null});
 function onOpenDevice(connectionHandle)
 {
-	console.log(connectionHandle);
+	debugMessageCallback("status_change", "connectionHandle: " + connectionHandle);
 	usbhandle = connectionHandle;
 	resetPortal();
 	activatePortalAntenna();
@@ -365,7 +354,7 @@ function sendCompleted(usbEvent)
 {
 	if (chrome.runtime.lastError)
 	{
-		console.error("sendCompleted Error:", chrome.runtime.lastError);
+		debugMessageCallback("status_error", "sendCompleted Error: " + chrome.runtime.lastError);
 	}
 
 	if (usbEvent)
@@ -380,7 +369,7 @@ function sendCompleted(usbEvent)
 			}
 		}
 		if (usbEvent.resultCode !== 0) {
-			console.error("Error writing to device", usbEvent.resultCode);
+			debugMessageCallback("status_error", "Error writing to device: " + usbEvent.resultCode);
 		}
 	}
 }
