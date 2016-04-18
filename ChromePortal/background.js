@@ -6,7 +6,8 @@ chrome.app.runtime.onLaunched.addListener(function() {
     }
   });
 });
-var placedCharcterCallback = function(c, d, n)
+
+var placedCharacterCallback = function(c, d, n)
 {
 	console.log(c, d, n);
 }

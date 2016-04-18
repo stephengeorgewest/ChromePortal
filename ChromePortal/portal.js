@@ -25,7 +25,7 @@ var rw_buf_size = 0x21;
 var myText;
 
 // these should be overridden in background.js
-var placedCharcterCallback = function(c, d, n)
+var placedCharacterCallback = function(c, d, n)
 {
 	console.log(c, d, n);
 }
@@ -52,7 +52,7 @@ var myDevicePoll = function() {
 		chrome.hid.receive(connectionId, function(reportID, data) {
 			if(chrome.runtime.lastError != null && myText != null)
 			{
-				debugMessageCallback("status_change",chrome.runtime.lastError.message);
+				debugMessageCallback("status_change", chrome.runtime.lastError.message);
 			}
 			else
 			{
@@ -80,7 +80,7 @@ var myDevicePoll = function() {
 							}*/
 							
 							//nevermind. they simply won't match portal_spots
-							// and that will remove thim.
+							// and that will remove them.
 							break;
 						case 'S': 
 							for(var i=0; i<4*8; i++)
@@ -138,11 +138,10 @@ var myDevicePoll = function() {
 									{
 										if(pc<num)
 											continue;
-
 										portal_spots[placed_characters[pc].portal_spot].placed_character = pc;
 									}*/
 									portal_spots[i].Active = false;
-									placedCharcterCallback("removed", portal_spots)
+									placedCharacterCallback("removed", portal_spots);
 								}
 							}
 							var recievedMessageCount = array[5];
@@ -182,10 +181,10 @@ var myDevicePoll = function() {
 							//var _portalSpot = placed_characters[placedCharacter]["portal_spot"];
 							//portal_spots[_portalSpot].Character = character;
 							//character type
-	   					  	debugMessageCallback("status_change", character.name);
-	   					  	// should really loop over array 
-	   					  	if(pending_read.length == 0 && currently_reading == null)
-	   					  		placedCharcterCallback("new_character", placed_characters, placedCharacter)
+							debugMessageCallback("status_change", character.name);
+							// should really loop over array 
+							if(pending_read.length == 0 && currently_reading == null)
+								placedCharacterCallback("new_character", placed_characters, placedCharacter)
 							break;
 
 					}// end read message
@@ -317,8 +316,6 @@ function onOpenDevice(connectionHandle)
 /***************************************/
 /***** Portal Specific Usb Command *****/
 /***************************************/
-// put these in var portal = function(){ this.sendRequest = function()}?
-// needs on usb device added/removed
 function sendRequest(data) {
 	var ti = {
 		"requestType": "class", /*bmRequestType 0x21*/
