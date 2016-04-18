@@ -49,16 +49,16 @@ function readPortalMessage(msg)
 	{
 		document.getElementById("statusChange").innerHTML =
 			document.getElementById("statusChange").innerHTML +
- 			"<br />" +
- 			msg.data;
- 	}
- 	if(msg.command == "status_error")
+			"<br />" +
+			msg.data;
+	}
+	if(msg.command == "status_error")
 	{
 		document.getElementById("statusChange").innerHTML =
 			document.getElementById("statusChange").innerHTML +
- 			"<br /><span class='error'" +
- 			msg.data + "</span>";
- 	}
+			"<br /><span class='error'" +
+			msg.data + "</span>";
+	}
 }
 var portalPort = chrome.runtime.connect({name: "portal"});
 portalPort.onMessage.addListener(readPortalMessage);
