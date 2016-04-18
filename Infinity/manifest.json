@@ -1,0 +1,23 @@
+{
+  "name": "Infinity Portal",
+  "description": "Change the color of the portal, and see how many are on, and read serial numbers.",
+  "version": "0.1",
+  "manifest_version": 2,
+  "app": {
+    "background": {
+      "scripts": ["toy.js", "portal.js","background.js"],
+	  "persistant": true
+    }
+  },
+  "icons": {"128": "icon.png" },
+  "permissions": ["storage", "fullscreen", "webview", "http://www.youtube.com/*", "https://www.youtube.com/*", "usb", "hid", {
+      "usbDevices":
+          [ { "vendorId": 3695, "productId":297}, { "vendorId": 5168, "productId":7959}, { "vendorId": 5168, "productId":336}  ]
+      }
+  ],
+  "sandbox": {
+  	"pages": [
+		"debug.html"
+  	]
+  }
+}

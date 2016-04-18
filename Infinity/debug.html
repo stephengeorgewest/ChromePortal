@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Debug!</title>
+		<script src="toy.js"></script>
+		<!--<script src="portal.js"></script>-->
+		<script src="debug.js"></script>
+		<script src="jscolor.js"></script>
+		<style>
+			body{max-height:37em;}
+			textbox
+			{
+				overflow: scroll;
+				max-height: 29em;
+				display: block;
+			}
+			.error{color:red;}
+			p{margin-top:0em;margin-bottom:0.3em;}
+		</style>
+	</head>
+	<body>
+		<input type="text" id="mytext" />
+		<button id="readData">ReadData</button>
+		<button id="activatePortalAntenna">ActivatePortalAntenna</button>
+		<button id="restartPolling">restartPolling</button>
+	Color: <input class="jscolor {onFineChange:'changeColor(1)'}" id = "color1" value="ab2567">
+		<br /><input class="jscolor {onFineChange:'changeColor(2)'}" id = "color2" value="ab2567">
+		<input class="jscolor {onFineChange:'changeColor(3)'}" id = "color3" value="ab2567">
+		<textbox id="textbox">placed tags</textbox>
+		<section class="detail-section info">
+			<div id="icon" class="character-info air"><div class="element-icon"></div></div>
+		</section>
+		<textbox id="statusChange"></textbox>
+	</body>
+</html>
